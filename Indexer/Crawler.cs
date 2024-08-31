@@ -19,7 +19,7 @@ namespace Indexer
 
         public Crawler()
         {
-            _api = new HttpClient { BaseAddress = new Uri("http://localhost:5064") };
+            _api = new HttpClient { BaseAddress = new Uri("http://localhost:8080") };
         }
 
         // Return a dictionary containing all words (as the key) in the file

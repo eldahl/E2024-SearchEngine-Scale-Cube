@@ -1,14 +1,39 @@
 services:
-  word-db:
+  document-db:
     image: mcr.microsoft.com/azure-sql-edge:latest
     environment:
       MSSQL_SA_PASSWORD: "SuperSecret7!"
       ACCEPT_EULA: "Y"
-    ports:
-      - "25565:1433"  # Maps host port 1436 to container port 1433
     volumes:
-      - mssql-data:/var/opt/mssql
-    hostname: word-db
+      - mssql-document:/var/opt/mssql
+  occurrence-db:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      MSSQL_SA_PASSWORD: "SuperSecret7!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql-occurrence:/var/opt/mssql
+  short-word-db:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      MSSQL_SA_PASSWORD: "SuperSecret7!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql-data-short:/var/opt/mssql
+  medium-word-db:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      MSSQL_SA_PASSWORD: "SuperSecret7!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql-data-medium:/var/opt/mssql
+  long-word-db:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      MSSQL_SA_PASSWORD: "SuperSecret7!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql-data-long:/var/opt/mssql
   wordservice:
     build: 
       context: .
@@ -16,7 +41,15 @@ services:
     deploy:
       replicas: 3
     hostname: wordservice
+    depends_on:
+      - document-db
+      - occurrence-db
+      - short-word-db
+      - medium-word-db
+      - long-word-db
   nginx:
+    depends_on:
+      - wordservice
     image: nginx:latest
     ports:
       - "8080:80"
@@ -51,4 +84,8 @@ services:
       "
 
 volumes:
-  mssql-data:
+  mssql-document:
+  mssql-occurrence:
+  mssql-data-short:
+  mssql-data-medium:
+  mssql-data-long:

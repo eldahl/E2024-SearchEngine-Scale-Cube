@@ -14,14 +14,14 @@ namespace WordService.Controllers
             _database = database;
         }
 
-        [HttpGet("GetByDocIds")]
-        public List<string> GetByDocIds([FromQuery] List<int> docIds)
+        [HttpPost("GetByDocIds")]
+        public List<string> GetByDocIds([FromBody] List<int> docIds)
         {
             return _database.GetDocDetails(docIds);
         }
 
-        [HttpGet("GetByWordIds")]
-        public Dictionary<int, int> GetByWordIds([FromQuery] List<int> wordIds)
+        [HttpPost("GetByWordIds")]
+        public Dictionary<int, int> GetByWordIds([FromBody] List<int> wordIds)
         {
             return _database.GetDocuments(wordIds);
         }

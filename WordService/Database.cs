@@ -1,22 +1,23 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Transactions;
 using Microsoft.Data.SqlClient;
 
 namespace WordService
 {
     public class Database
     {
-        private readonly SqlConnection _connection;
+        private readonly Coordinator _coordinator;
 
         // Public constructor
-        public Database(string connectionString)
+        public Database(Coordinator coordinator)
         {
-            _connection = new SqlConnection(connectionString);
-            _connection.Open();
+            _coordinator = coordinator;
         }
 
         // Private method to execute SQL commands
-        private void Execute(string sql)
+        private void Execute(string sql, IDbConnection _connection)
         {
             using var trans = _connection.BeginTransaction();
             var cmd = _connection.CreateCommand();
@@ -29,24 +30,29 @@ namespace WordService
         // Method to delete the existing database (used in Indexer)
         public void DeleteDatabase()
         {
-            Execute("DROP TABLE IF EXISTS Occurrences");
-            Execute("DROP TABLE IF EXISTS Words");
-            Execute("DROP TABLE IF EXISTS Documents");
+            foreach (var conn in _coordinator.GetAllConnections())
+            {
+                Execute("DROP TABLE IF EXISTS Occurrences",conn);
+                Execute("DROP TABLE IF EXISTS Words",conn);
+                Execute("DROP TABLE IF EXISTS Documents",conn);
+            }
         }
 
         // Method to recreate the database schema (used in Indexer)
         public void RecreateDatabase()
         {
-            Execute("CREATE TABLE Documents(id INTEGER PRIMARY KEY, url VARCHAR(500))");
-            Execute("CREATE TABLE Words(id INTEGER PRIMARY KEY, name VARCHAR(500))");
-            Execute("CREATE TABLE Occurrences(wordId INTEGER, docId INTEGER, "
-                    + "FOREIGN KEY (wordId) REFERENCES Words(id), "
-                    + "FOREIGN KEY (docId) REFERENCES Documents(id))");
+            foreach (var conn in _coordinator.GetAllConnections())
+            {
+                Execute("CREATE TABLE Documents(id INTEGER PRIMARY KEY, url VARCHAR(500))",conn);
+                Execute("CREATE TABLE Words(id INTEGER PRIMARY KEY, name VARCHAR(500))",conn);
+                Execute("CREATE TABLE Occurrences(wordId INTEGER, docId INTEGER)",conn);
+            }
         }
 
         // Method to insert a document into the database (used in Indexer)
         public void InsertDocument(int id, string url)
         {
+            var _connection = _coordinator.GetDocumentConnection();
             var insertCmd = _connection.CreateCommand();
             insertCmd.CommandText = "INSERT INTO Documents(id, url) VALUES(@id,@url)";
 
@@ -62,34 +68,34 @@ namespace WordService
         // Method to insert all words into the database (used in Indexer)
         public void InsertAllWords(Dictionary<string, int> res)
         {
-            using (var transaction = _connection.BeginTransaction())
+            foreach (var p in res)
             {
-                var command = _connection.CreateCommand();
-                command.Transaction = transaction;
-                command.CommandText = @"INSERT INTO Words(id, name) VALUES(@id,@name)";
-
-                var paramName = command.CreateParameter();
-                paramName.ParameterName = "name";
-                command.Parameters.Add(paramName);
-
-                var paramId = command.CreateParameter();
-                paramId.ParameterName = "id";
-                command.Parameters.Add(paramId);
-
-                foreach (var p in res)
+                var connection = _coordinator.GetWordConnection(p.Key);
+                using (var transaction = connection.BeginTransaction())
                 {
+                    var command = connection.CreateCommand();
+                    command.Transaction = transaction;
+                    command.CommandText = @"INSERT INTO Words(id, name) VALUES(@id,@name)";
+
+                    var paramName = command.CreateParameter();
+                    paramName.ParameterName = "name";
+                    command.Parameters.Add(paramName);
+
+                    var paramId = command.CreateParameter();
+                    paramId.ParameterName = "id";
+                    command.Parameters.Add(paramId);
                     paramName.Value = p.Key;
                     paramId.Value = p.Value;
                     command.ExecuteNonQuery();
+                    transaction.Commit();
                 }
-
-                transaction.Commit();
             }
         }
 
         // Method to insert all occurrences of words in a document (used in Indexer)
         public void InsertAllOcc(int docId, ISet<int> wordIds)
         {
+            var _connection = _coordinator.GetOccurrenceConnection();
             using (var transaction = _connection.BeginTransaction())
             {
                 var command = _connection.CreateCommand();
@@ -118,6 +124,7 @@ namespace WordService
         // Method to retrieve documents based on word IDs (used in ConsoleSearch)
         public Dictionary<int, int> GetDocuments(List<int> wordIds)
         {
+            var _connection = _coordinator.GetDocumentConnection();
             var res = new Dictionary<int, int>();
 
             var sql = @"SELECT docId, COUNT(wordId) AS count FROM Occurrences WHERE wordId IN " + AsString(wordIds) + " GROUP BY docId ORDER BY count DESC;";
@@ -142,27 +149,32 @@ namespace WordService
         // Method to retrieve all words from the database (used in both Indexer and ConsoleSearch)
         public Dictionary<string, int> GetAllWords()
         {
+            
             Dictionary<string, int> res = new Dictionary<string, int>();
-
-            var selectCmd = _connection.CreateCommand();
-            selectCmd.CommandText = "SELECT * FROM Words";
-
-            using (var reader = selectCmd.ExecuteReader())
+            foreach (var conn in _coordinator.GetAllWordConnections())
             {
-                while (reader.Read())
-                {
-                    var id = reader.GetInt32(0);
-                    var w = reader.GetString(1);
+                var selectCmd = conn.CreateCommand();
+                selectCmd.CommandText = "SELECT * FROM Words";
 
-                    res.Add(w, id);
+                using (var reader = selectCmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var id = reader.GetInt32(0);
+                        var w = reader.GetString(1);
+
+                        res.Add(w, id);
+                    }
                 }
             }
+
             return res;
         }
 
         // Method to retrieve document details by document IDs (used in ConsoleSearch)
         public List<string> GetDocDetails(List<int> docIds)
         {
+            var _connection = _coordinator.GetDocumentConnection();
             List<string> res = new List<string>();
 
             var selectCmd = _connection.CreateCommand();

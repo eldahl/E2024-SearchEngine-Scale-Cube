@@ -10,7 +10,7 @@ namespace Indexer
     {
         public void Run()
         {
-            var api = new HttpClient() { BaseAddress = new Uri("http://localhost:5064") };
+            var api = new HttpClient() { BaseAddress = new Uri("http://localhost:8080") };
             api.Send(new HttpRequestMessage(HttpMethod.Delete, "Database"));
             api.Send(new HttpRequestMessage(HttpMethod.Post, "Database"));
 

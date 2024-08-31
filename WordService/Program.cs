@@ -9,11 +9,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 // Register the Database service as a singleton
-builder.Services.AddSingleton<Database>(sp =>
-{
-    var connectionString = "Server=word-db;User Id=sa;Password=SuperSecret7!;Encrypt=false;";
-    return new Database(connectionString);
-});
+builder.Services.AddSingleton<Coordinator>();
+builder.Services.AddSingleton<Database>();
 
 var app = builder.Build();
 
