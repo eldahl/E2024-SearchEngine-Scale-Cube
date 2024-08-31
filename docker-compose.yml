@@ -1,0 +1,13 @@
+services:
+  word-db:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      MSSQL_SA_PASSWORD: "SuperSecret7!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "25565:1433"  # Maps host port 1436 to container port 1433
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+volumes:
+  mssql-data:
