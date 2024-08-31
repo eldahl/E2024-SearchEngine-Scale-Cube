@@ -11,7 +11,7 @@ builder.Services.AddSwaggerGen();
 // Register the Database service as a singleton
 builder.Services.AddSingleton<Database>(sp =>
 {
-    var connectionString = "Server=localhost,25565;User Id=sa;Password=SuperSecret7!;Encrypt=false;";
+    var connectionString = "Server=word-db;User Id=sa;Password=SuperSecret7!;Encrypt=false;";
     return new Database(connectionString);
 });
 

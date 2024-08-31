@@ -8,6 +8,47 @@ services:
       - "25565:1433"  # Maps host port 1436 to container port 1433
     volumes:
       - mssql-data:/var/opt/mssql
+    hostname: word-db
+  wordservice:
+    build: 
+      context: .
+      dockerfile: WordService/Dockerfile
+    deploy:
+      replicas: 3
+    hostname: wordservice
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    entrypoint: >
+      sh -c "
+      echo '
+      events { }
+
+      http {
+          upstream web_backend {
+              server wordservice:5064;
+              server wordservice:5064;
+              server wordservice:5064;
+          }
+
+          server {
+              listen 80;
+              server_name localhost;
+
+              location / {
+                  proxy_pass http://web_backend;
+                  proxy_set_header Host $$host;
+                  proxy_set_header X-Real-IP $$remote_addr;
+                  proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $$scheme;
+              }
+          }
+      }
+      ' > /etc/nginx/nginx.conf &&
+      cat /etc/nginx/nginx.conf &&
+      nginx -g 'daemon off;'
+      "
 
 volumes:
   mssql-data:
