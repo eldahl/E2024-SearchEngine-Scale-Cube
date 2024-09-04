@@ -23,6 +23,11 @@ namespace WordService.Controllers
         [HttpPost("GetByWordIds")]
         public Dictionary<int, int> GetByWordIds([FromBody] List<int> wordIds)
         {
+            Console.WriteLine(wordIds);
+            foreach (var wordId in wordIds)
+            {
+                Console.WriteLine(wordId);
+            }
             return _database.GetDocuments(wordIds);
         }
 

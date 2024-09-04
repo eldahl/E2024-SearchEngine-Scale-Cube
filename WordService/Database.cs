@@ -124,11 +124,16 @@ namespace WordService
         // Method to retrieve documents based on word IDs (used in ConsoleSearch)
         public Dictionary<int, int> GetDocuments(List<int> wordIds)
         {
-            var _connection = _coordinator.GetDocumentConnection();
+            var _connection = _coordinator.GetOccurrenceConnection();
             var res = new Dictionary<int, int>();
 
             var sql = @"SELECT docId, COUNT(wordId) AS count FROM Occurrences WHERE wordId IN " + AsString(wordIds) + " GROUP BY docId ORDER BY count DESC;";
-
+            Console.WriteLine(sql);
+            foreach (var wid in wordIds)
+            { 
+                Console.WriteLine(wid);
+            }
+            
             var selectCmd = _connection.CreateCommand();
             selectCmd.CommandText = sql;
 
@@ -142,7 +147,11 @@ namespace WordService
                     res.Add(docId, count);
                 }
             }
-
+            Console.WriteLine(res);
+            foreach (var kv in res)
+            {
+                Console.WriteLine("key: " + kv.Key + " | value: " + kv.Value);
+            }
             return res;
         }
 

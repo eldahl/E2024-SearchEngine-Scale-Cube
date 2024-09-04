@@ -37,8 +37,10 @@ namespace ConsoleSearch
         // Updated method to get documents using HttpClient
         public Dictionary<int, int> GetDocuments(List<int> wordIds)
         {
-            var url = "Document/GetByWordIds";
-            var response = _api.PostAsync(url, new StringContent(JsonSerializer.Serialize(wordIds),Encoding.UTF8, "application/json")).Result;
+            var url = "/Document/GetByWordIds";
+            var json = JsonSerializer.Serialize(wordIds);
+            var SC = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = _api.PostAsync(url, SC).Result;
             response.EnsureSuccessStatusCode();
             var content = response.Content.ReadAsStringAsync().Result;
             return JsonSerializer.Deserialize<Dictionary<int, int>>(content);
@@ -47,7 +49,7 @@ namespace ConsoleSearch
         // Updated method to get document details using HttpClient
         public List<string> GetDocumentDetails(List<int> docIds)
         {
-            var url = "Document/GetByDocIds";
+            var url = "/Document/GetByDocIds";
             Console.WriteLine(url);
             var response = _api.PostAsync(url, new StringContent(JsonSerializer.Serialize(docIds), Encoding.UTF8, "application/json")).Result;
             response.EnsureSuccessStatusCode();
