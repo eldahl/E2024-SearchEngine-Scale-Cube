@@ -28,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Polly" Version="8.4.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\WordService\WordService.csproj" />

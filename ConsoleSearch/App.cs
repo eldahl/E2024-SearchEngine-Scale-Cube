@@ -36,7 +36,7 @@ namespace ConsoleSearch
 
                 DateTime start = DateTime.Now;
 
-                var docIds = mSearchLogic.GetDocuments(wordIds);
+                var docIds = mSearchLogic.GetDocuments(wordIds).Result;
 
                 // get details for the first 10             
                 var top10 = docIds.Keys.Take(10).ToList();
@@ -44,7 +44,7 @@ namespace ConsoleSearch
                 TimeSpan used = DateTime.Now - start;
 
                 int idx = 0;
-                var docDetails = mSearchLogic.GetDocumentDetails(top10);
+                var docDetails = mSearchLogic.GetDocumentDetails(top10).Result;
                 foreach (var doc in docDetails)
                 {
                     Console.WriteLine($"{idx + 1}: {doc} -- contains {docIds[top10[idx]]} search terms");
